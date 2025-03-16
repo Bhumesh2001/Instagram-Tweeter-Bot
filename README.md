@@ -42,7 +42,7 @@ This project is a **Node.js-based automation tool** that:
 ### 1️⃣ Clone the repository
 
 ```sh
-$ git clone https://github.com/your-repo/instagram-twitter-bot.git
+https://github.com/Bhumesh2001/Instagram-Tweeter-Bot.git
 $ cd instagram-twitter-bot
 ```
 

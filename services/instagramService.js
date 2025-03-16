@@ -1,34 +1,64 @@
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const fs = require('fs');
+
+puppeteer.use(StealthPlugin());
+
+const INSTAGRAM_USERNAME = process.env.INSTAGRAM_USERNAME;
+const INSTAGRAM_PASSWORD = process.env.INSTAGRAM_PASSWORD;
+const COOKIES_FILE = 'cookies.json';
 
 exports.fetchInstagramPost = async (username) => {
     let browser;
     let page;
     try {
-        browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security'],
-        });
+        browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox'] });
         page = await browser.newPage();
 
-        // Mimic a real browser
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-        await page.setViewport({ width: 1280, height: 800 });
+        // Load cookies if available
+        if (fs.existsSync(COOKIES_FILE)) {
+            const cookies = JSON.parse(fs.readFileSync(COOKIES_FILE));
+            await page.setCookie(...cookies);
+        }
 
-        // Optional: Simulate human behavior
+        // Navigate to Instagram
         await page.goto('https://www.instagram.com/', { waitUntil: 'networkidle2' });
-        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Login if required
+        if ((await page.$('input[name="username"]')) !== null) {
+            await page.type('input[name="username"]', INSTAGRAM_USERNAME, { delay: 100 });
+            await page.type('input[name="password"]', INSTAGRAM_PASSWORD, { delay: 100 });
+            await Promise.all([
+                page.click('button[type="submit"]'),
+                page.waitForNavigation({ waitUntil: 'networkidle2' })
+            ]);
+
+            // Save session cookies
+            const cookies = await page.cookies();
+            fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies));
+        }
+
+        // Go to the Instagram profile
         await page.goto(`https://www.instagram.com/${username}/`, { waitUntil: 'networkidle2' });
 
-        await page.waitForSelector('article img', { timeout: 10000 });
-        // Simulate scrolling
-        await page.evaluate(() => window.scrollBy(0, 500));
+        // Ensure elements are fully loaded
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
+        // Extract post data
         const post = await page.evaluate(() => {
-            const imageElement = document.querySelector('article div[role="presentation"] img');
-            const imageUrl = imageElement?.src || null;
-            const captionElement = document.querySelector('article h1 + div span');
-            let caption = captionElement?.innerText || 'No caption';
-            caption = caption.replace(/\n/g, ' ').trim();
+            let imageElement = document.querySelector('article img') ||
+                document.querySelector('div[role="button"] img') ||
+                document.querySelector('img[srcset]');
+
+            let imageUrl = imageElement ? imageElement.getAttribute('src') : null;
+
+            // **Dynamic Caption Selection**
+            let captionElement = document.querySelector('div[role="dialog"] h1') ||
+                document.querySelector('div[role="dialog"] article div > div > div span') ||
+                document.querySelector('div[role="dialog"] div[role="button"] span');
+
+            let caption = captionElement ? captionElement.innerText.trim() : 'No caption';
+
             return { imageUrl, caption };
         });
 

@@ -129,16 +129,13 @@ $ node server.js
 ✅ **Post Tweet** – Automatically posts the summary to X.com
 ✅ **Centralized Error Handling** – Ensures robust debugging
 ✅ **Modular MVC Structure** – Scalable and maintainable
-✅ **Secure API Integration** – Uses environment variables for credentials
 
 ---
 
 ## 📌 Future Enhancements
 
-🔹 Add **OAuth authentication** for secure API requests
 🔹 Improve **web scraping** to support more Instagram pages
 🔹 Enhance AI summarization using **fine-tuned models**
-🔹 Implement **rate limiting** for API calls
 
 ---
 

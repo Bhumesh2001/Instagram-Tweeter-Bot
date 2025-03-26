@@ -1,74 +1,37 @@
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const fs = require('fs');
+require('dotenv').config();
+const axios = require('axios');
 
-puppeteer.use(StealthPlugin());
+const options = {
+    method: 'GET',
+    url: 'https://instagram-data1.p.rapidapi.com/user/posts',
+    params: { username: 'bbcnews' },
+    headers: {
+        'X-RapidAPI-Key': `${process.env.RAPIDAPI_KEY}`,
+        'X-RapidAPI-Host': `${process.env.RAPIDAPI_HOST}`
+    }
+};
 
-const INSTAGRAM_USERNAME = process.env.INSTAGRAM_USERNAME;
-const INSTAGRAM_PASSWORD = process.env.INSTAGRAM_PASSWORD;
-const COOKIES_FILE = 'cookies.json';
-
-exports.fetchInstagramPost = async (username) => {
-    let browser;
-    let page;
+exports.fetchInstagramPost = async () => {
     try {
-        browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox'] });
-        page = await browser.newPage();
-
-        // Load cookies if available
-        if (fs.existsSync(COOKIES_FILE)) {
-            const cookies = JSON.parse(fs.readFileSync(COOKIES_FILE));
-            await page.setCookie(...cookies);
+        const response = await axios.request(options);
+        let postData = [];
+        for (let item of response.data.items) {
+            let captionText = item.caption?.text
+                ? item.caption.text
+                    .replace(/[\n\\]+/g, ' ')  // Remove \n and \ 
+                    .replace(/\"/g, '')  // Remove \" double quotes
+                    .replace(/\s+/g, ' ')  // Remove extra spaces
+                    .trim()
+                : 'No caption available';
+            let imageUrl = item.display_uri || 'No image available';
+            postData.push({ caption: captionText, postUrl: imageUrl });
+            break;
         }
-
-        // Navigate to Instagram
-        await page.goto('https://www.instagram.com/', { waitUntil: 'networkidle2' });
-
-        // Login if required
-        if ((await page.$('input[name="username"]')) !== null) {
-            await page.type('input[name="username"]', INSTAGRAM_USERNAME, { delay: 100 });
-            await page.type('input[name="password"]', INSTAGRAM_PASSWORD, { delay: 100 });
-            await Promise.all([
-                page.click('button[type="submit"]'),
-                page.waitForNavigation({ waitUntil: 'networkidle2' })
-            ]);
-
-            // Save session cookies
-            const cookies = await page.cookies();
-            fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies));
-        }
-
-        // Go to the Instagram profile
-        await page.goto(`https://www.instagram.com/${username}/`, { waitUntil: 'networkidle2' });
-
-        // Ensure elements are fully loaded
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        // Extract post data
-        const post = await page.evaluate(() => {
-            let imageElement = document.querySelector('article img') ||
-                document.querySelector('div[role="button"] img') ||
-                document.querySelector('img[srcset]');
-
-            let imageUrl = imageElement ? imageElement.getAttribute('src') : null;
-
-            // **Dynamic Caption Selection**
-            let captionElement = document.querySelector('div[role="dialog"] h1') ||
-                document.querySelector('div[role="dialog"] article div > div > div span') ||
-                document.querySelector('div[role="dialog"] div[role="button"] span');
-
-            let caption = captionElement ? captionElement.innerText.trim() : 'No caption';
-
-            return { imageUrl, caption };
-        });
-
-        return post;
+        // fs.writeFileSync('instagram_posts.json', JSON.stringify(postData, null, 4));
+        // console.log('Data saved successfully...!');
+        return postData[0];
 
     } catch (error) {
-        console.error('Error:', error.message);
-        return null;
-    } finally {
-        if (page) await page.close();
-        if (browser) await browser.close();
-    }
+        console.error(error);
+    };
 };

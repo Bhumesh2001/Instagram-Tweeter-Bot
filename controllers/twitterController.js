@@ -5,7 +5,7 @@ const responseConstants = require('../utils/responseConstants');
 
 exports.postTweet = async (req, res, next) => {
     try {
-        const post = await instagramService.fetchInstagramPost('bbcnews');
+        const post = await instagramService.fetchInstagramPost();
         if (!post) throw new Error(responseConstants.ERROR_FETCH_POST.message);
 
         const tweetText = await aiService.summarizeCaption(post.caption);

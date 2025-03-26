@@ -62,6 +62,8 @@ TWITTER_API_KEY=your_twitter_key
 TWITTER_API_SECRET=your_twitter_secret
 TWITTER_ACCESS_TOKEN=your_twitter_token
 TWITTER_ACCESS_SECRET=your_twitter_secret
+RAPIDAPI_KEY=your-rapidapi-key
+RAPIDAPI_HOST=your-rapid-host
 ```
 
 ### 4️⃣ Start the server
@@ -112,7 +114,7 @@ $ node server.js
 
 - **Node.js** - Backend framework
 - **Express.js** - API handling
-- **Puppeteer** - Web scraping (Instagram post retrieval)
+- **RapidAI** - Rapid API(library)
 - **OpenAI API** - Caption summarization
 - **Twitter API (twitter-api-v2)** - Tweet posting
 - **Winston** - Logging

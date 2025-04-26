@@ -1,6 +1,4 @@
 module.exports = (err, req, res, next) => {
-    console.error(err.stack); // Log error stack for debugging
-
     let statusCode = err.status || 500;
     let message = err.message || 'Internal Server Error';
 

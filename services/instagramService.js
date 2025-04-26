@@ -32,6 +32,6 @@ exports.fetchInstagramPost = async () => {
         return postData[0];
 
     } catch (error) {
-        console.error(error);
+        console.error(error.message);
     };
 };

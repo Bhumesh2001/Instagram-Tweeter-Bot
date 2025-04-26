@@ -12,7 +12,7 @@ exports.postTweet = async (req, res, next) => {
         if (!tweetText) throw new Error(responseConstants.ERROR_SUMMARIZATION.message);
 
         const tweet = await twitterService.postTweet(tweetText);
-        if (tweet) res.json({ ...responseConstants.SUCCESS, tweet });
+        if (tweet) res.json({ ...responseConstants.SUCCESS, data: tweet });
         else throw new Error(responseConstants.ERROR_TWEET.message);
     } catch (error) {
         next(error);
